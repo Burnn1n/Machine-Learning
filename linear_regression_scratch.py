@@ -25,7 +25,7 @@ def main(number):
             result = w[0] * l + w[1]
             predictions += [result]
 
-        error = []
+        error = [] 
         gradient = [0,0]
         n = len(y)
         for j in range(len(y)):
