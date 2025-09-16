@@ -1,9 +1,11 @@
+# region Linear Regression from scratch
 
 """ 
     Энд linear regression-г цэвэр кодоор хийх болно. Linear regression from scratch
 """
 import matplotlib.pyplot as plt
 import numpy as np
+import csv
 
 
 def linear_scratch(number):
@@ -66,9 +68,11 @@ def linear_scratch(number):
 
 
 inp = 145.58
-res = linear_scratch(inp)
-print(f'Result: {inp} -> {res} {res/inp}')
+# res = linear_scratch(inp)
+# print(f'Result: {inp} -> {res} {res/inp}')
+# endregion
 
+# region Linear Regression Numpy
 
 """ 
     Энд linear regression-г numpy сан ашиглан хийх болно. 
@@ -292,5 +296,126 @@ def linear_numpy():
     plt.show()
 
     print("\n✅ Analysis complete! The model has learned to predict house prices based on both year and size.")
+# linear_numpy()
+# endregion
 
-linear_numpy()
+
+def linear_numpy_dynamic(x,y,inp):
+
+    # 2️⃣ Split data into inputs (X) and output (y)
+    X = np.array(x, dtype=float)  # [year, m3]
+    y = np.array(y, dtype=float)          # price
+
+   
+
+
+    print("Original data shape:")
+    print(f"X (inputs): {X.shape} - {X[:3]}")  # Show first 3 rows
+    print(f"y (output): {y.shape} - {y[:3]}")
+
+    # 3️⃣ Normalize features (very important for multiple inputs!)
+    X_cont = X[:, :8]   # first 8 cols
+    X_cat  = X[:, 8:]   # last 6 cols (one-hot)
+
+    X_mean = X_cont.mean(axis=0)
+    X_std  = X_cont.std(axis=0)
+    X_cont_norm = (X_cont - X_mean) / X_std
+   
+    # Recombine
+    X_norm = np.hstack([X_cont_norm, X_cat])
+
+    print(f"\nNormalization stats:")
+    print(f"X_mean: {X_mean}")
+    print(f"X_std: {X_std}")
+    print(f"X_norm first 3 {X_norm.shape[0]} rows: {X_norm[:3]}")
+
+    # 4️⃣ Add bias term (column of 1s)
+    X_bias = np.c_[np.ones(X_norm.shape[0]), X_norm]
+    print(f"\nX_bias shape: {X_bias.shape}")
+    print(f"X_bias first 3 rows:\n{X_bias[:3]}")
+
+    # 5️⃣ Initialize weights: [bias, weight_for_year, weight_for_m3]
+    weights = np.zeros(X_norm[0].shape[0]+1)  # Now we have 3 weights!
+    print(f"\nInitial weights: {weights}")
+
+    # 6️⃣ Gradient descent parameters
+    learning_rate = 0.1  # Smaller for multiple features
+    iterations = 100000     # More iterations for convergence
+
+    # Track learning progress
+    cost_history = []
+
+    # 7️⃣ Gradient descent loop
+
+    print("\nStarting gradient descent...")
+    for i in range(iterations):
+        # Forward pass: make predictions
+        # y = ax + bz + c
+        predictions = X_bias.dot(weights)
+        
+        # Calculate errors
+        errors = predictions - y
+        # Calculate cost (mean squared error)
+        cost = np.mean(errors**2)
+        cost_history.append(cost)
+        
+        # Calculate gradients for each weight
+        gradient = X_bias.T.dot(errors) / len(y)
+        
+        # Update weights
+        weights -= learning_rate * gradient
+        
+        # Print progress every 200 iterations
+        if i % 10000 == 0:
+            print(f"Iteration {i}: Cost = {cost:.2f}, Weights = {weights}")
+
+    print(f"\nFinal weights: {weights}")
+
+    print(X_bias, weights)
+    predictions = X_bias.dot(weights)
+    print(predictions)
+    errors = predictions - y  # residuals
+    mape = 100 - np.mean(np.abs(errors / y)) * 100
+    print(f"Accuracy percentage: {mape:.2f}%")
+
+    plt.figure(figsize=(8,5))
+    plt.bar(range(len(errors)), errors, color='orange')
+    plt.axhline(0, color='black', linewidth=1)  # zero line for reference
+    plt.xlabel("Data Index")
+    plt.ylabel("Error (Prediction - Actual)")
+    plt.title("Residuals / Prediction Errors")
+    plt.show()
+    
+
+    def predict_price(arr):
+        arr = np.array(arr)
+        arr_cont = arr[:8]   # first 8 cols
+        arr_cat  = arr[8:]   # last 6 cols (one-hot)
+        arr_cont_norm = (arr_cont - X_mean) / X_std
+    
+        # Recombine
+        arr_norm = np.hstack([[1],arr_cont_norm, arr_cat])
+        return arr_norm.dot(weights)
+    print('predicted price:')
+    print(predict_price(inp))
+
+def _read_csv(csv_file_path):
+    with open(csv_file_path, 'r', newline='', encoding='utf-8') as file:
+        csv_reader = csv.reader(file)
+        rows = list(csv_reader)
+        del rows[0]
+        x = []
+        y = []
+        ocean_list = list(set([l[-1] for l in rows]))
+        print(ocean_list)
+        for row in rows:
+            ocean_one = row[-1]
+            ocean_l = [1 if l == ocean_one else 0 for l in ocean_list]
+            x_element = ([float(l) if l else 0 for l in row[:9]]) + ocean_l
+            del x_element[8]
+            x += [x_element]
+            y += [float(row[8])]
+        return x, y
+x, y = _read_csv('housing.csv')
+inp = [-122.23, 37.88, 41.0, 880.0, 129.0, 322.0, 126.0, 8.3252, 0, 0, 1, 0, 0]
+res = linear_numpy_dynamic(x,y, inp)
